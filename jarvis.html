@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis Magrinho</title>
+    <style>
+        body { background-color: #121212; color: #00ff00; font-family: monospace; text-align: center; padding: 20px; }
+        button { background-color: #00ff00; color: #121212; border: none; padding: 20px; font-size: 20px; border-radius: 50%; margin-top: 50px; cursor: pointer; }
+        button:active { background-color: #008800; }
+        #status { margin-top: 20px; font-size: 18px; }
+        #resposta { margin-top: 30px; font-size: 22px; color: #ffffff; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Sistema Jarvis</h1>
+    <div id="status">Clique no botão e fale</div>
+    <button id="btnFalar">🎤</button>
+    <div id="resposta"></div>
+
+    <script>
+        // COLOQUE A URL DO SEU RENDER AQUI
+        const URL_SERVIDOR = "https://jarvis-1-5hq4.onrender.com/chat"; 
+        
+        const btn = document.getElementById('btnFalar');
+        const status = document.getElementById('status');
+        const respostaDiv = document.getElementById('resposta');
+
+        // Configura o reconhecimento de voz do navegador
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'pt-BR';
+
+        btn.addEventListener('click', () => {
+            recognition.start();
+            status.innerText = "Ouvindo...";
+        });
+
+        recognition.onresult = async (event) => {
+            const texto = event.results[0][0].transcript;
+            status.innerText = "Você disse: " + texto;
+            
+            // Manda para o servidor no Render
+            try {
+                const response = await fetch(URL_SERVIDOR, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mensagem: texto })
+                });
+                
+                const data = await response.json();
+                
+                if (data.resposta) {
+                    respostaDiv.innerText = data.resposta;
+                    falar(data.resposta);
+                } else {
+                    respostaDiv.innerText = "Erro: " + data.erro;
+                }
+            } catch (e) {
+                respostaDiv.innerText = "Erro de conexão com o servidor.";
+            }
+        };
+
+        // Função para o celular falar
+        function falar(texto) {
+            const msg = new SpeechSynthesisUtterance(texto);
+            msg.lang = 'pt-BR';
+            window.speechSynthesis.speak(msg);
+        }
+    </script>
+</body>
+</html>
